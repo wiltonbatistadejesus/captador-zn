@@ -71,6 +71,45 @@ if st.button("Analisar e salvar lead"):
     }])
 
     banco = pd.read_csv(arquivo)
+    
+    st.divider()
+st.subheader("🔄 Atualizar status do lead")
+
+if len(dados) > 0:
+
+    lead = st.selectbox(
+        "Selecione o lead",
+        dados["Nome"]
+    )
+
+    novo_status = st.selectbox(
+        "Mover para",
+        [
+            "Novo",
+            "Contatado",
+            "Visita",
+            "Captação",
+            "Venda"
+        ]
+    )
+
+    if st.button("Atualizar"):
+
+        dados.loc[
+            dados["Nome"] == lead,
+            "Status"
+        ] = novo_status
+
+        dados.to_csv(
+            arquivo,
+            index=False
+        )
+
+        st.success(
+            "Status atualizado"
+        )
+
+        st.rerun()
 
     banco = pd.concat(
         [banco,novo],
