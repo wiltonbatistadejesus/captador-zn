@@ -74,7 +74,7 @@ if st.button("Analisar e salvar lead"):
     
     st.divider()
 st.subheader("🔄 Atualizar status do lead")
-
+ dados = pd.read_csv(arquivo)
 if len(dados) > 0:
 
     lead = st.selectbox(
