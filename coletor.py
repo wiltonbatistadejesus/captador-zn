@@ -10,23 +10,33 @@ BAIRROS = [
     "Tremembé"
 ]
 
-dados = [
+import pandas as pd
 
-{
-"titulo":"Apartamento particular Santana",
-"descricao":"Direto com proprietário. Preciso vender",
-"bairro":"Santana",
-"valor":"680000"
-},
+# Exemplo lendo dados de uma fonte CSV
+dados = pd.read_csv(
+    "novos_leads.csv"
+)
 
-{
-"titulo":"Apartamento imobiliária",
-"descricao":"Imobiliária especializada",
-"bairro":"Tucuruvi",
-"valor":"520000"
-}
+leads = []
 
-]
+for _, anuncio in dados.iterrows():
+
+    score = classificar(
+        anuncio["descricao"]
+    )
+
+    if score >= 50:
+
+        leads.append({
+
+            "Nome": anuncio["nome"],
+            "WhatsApp": anuncio["whatsapp"],
+            "Bairro": anuncio["bairro"],
+            "Valor": anuncio["valor"],
+            "Score": score,
+            "Status": "Novo"
+
+        })
 
 leads=[]
 
