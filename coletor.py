@@ -1,23 +1,53 @@
-def classificar(anuncio):
+import pandas as pd
+from classificador import classificar
 
-    score = 0
+BAIRROS = [
+    "Santana",
+    "Tucuruvi",
+    "Casa Verde",
+    "Mandaqui",
+    "Jardim São Paulo",
+    "Tremembé"
+]
 
-    texto = anuncio.lower()
+dados = [
 
-    regras = {
-        "direto com proprietário":40,
-        "particular":30,
-        "sem corretor":25,
-        "trato direto":15,
-        "não aceito imobiliária":20,
-        "imobiliária":-40
-    }
+{
+"titulo":"Apartamento particular Santana",
+"descricao":"Direto com proprietário. Preciso vender",
+"bairro":"Santana",
+"valor":"680000"
+},
 
-    for palavra, valor in regras.items():
+{
+"titulo":"Apartamento imobiliária",
+"descricao":"Imobiliária especializada",
+"bairro":"Tucuruvi",
+"valor":"520000"
+}
 
-        if palavra in texto:
-            score += valor
+]
 
-    score = max(0,min(score,100))
+leads=[]
 
-    return score
+for anuncio in dados:
+
+    if anuncio["bairro"] in BAIRROS:
+
+        score = classificar(
+            anuncio["descricao"]
+        )
+
+        if score >= 50:
+
+            anuncio["score"]=score
+
+            leads.append(
+                anuncio
+            )
+
+df = pd.DataFrame(
+    leads
+)
+
+print(df)
