@@ -91,11 +91,35 @@ if st.button("Analisar e salvar lead"):
 
 st.divider()
 
-st.subheader("📋 Banco de Leads")
+st.divider()
+
+st.subheader("🏢 CRM Imobiliário")
 
 dados = pd.read_csv(arquivo)
 
-st.dataframe(
-    dados,
-    use_container_width=True
-)
+col1,col2,col3,col4,col5 = st.columns(5)
+
+with col1:
+    st.markdown("### 📌 Novos")
+    novos = dados[dados["Status"]=="Novo"]
+    st.dataframe(novos[["Nome","Bairro","Valor"]],hide_index=True)
+
+with col2:
+    st.markdown("### 📞 Contatados")
+    contato = dados[dados["Status"]=="Contatado"]
+    st.dataframe(contato[["Nome","Bairro","Valor"]],hide_index=True)
+
+with col3:
+    st.markdown("### 🏠 Visita")
+    visita = dados[dados["Status"]=="Visita"]
+    st.dataframe(visita[["Nome","Bairro","Valor"]],hide_index=True)
+
+with col4:
+    st.markdown("### ✍️ Captação")
+    captacao = dados[dados["Status"]=="Captação"]
+    st.dataframe(captacao[["Nome","Bairro","Valor"]],hide_index=True)
+
+with col5:
+    st.markdown("### 💰 Venda")
+    venda = dados[dados["Status"]=="Venda"]
+    st.dataframe(venda[["Nome","Bairro","Valor"]],hide_index=True)
