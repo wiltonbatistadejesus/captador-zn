@@ -93,9 +93,25 @@ if st.button("Analisar e salvar lead"):
 
     st.success("Lead salvo")
     st.metric("Score", score)
+if "urgente" in t or "preciso vender" in t:
+    st.error("🔥 Lead quente")
 
+elif "avaliando" in t or "estudando" in t:
+    st.warning("🟡 Lead morno")
+
+else:
+    st.info("❄️ Lead frio")
 # Carrega dados
-dados = pd.read_csv(arquivo)
+URL_PLANILHA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSjdBGWIbfd-xrk-8YO_zafNu8zZOPdXmMHXc7wcUn0TeYD-uf8_qFNRtk3uhh_wow6yQ8onO2pOzs/pub?output=tsv"
+
+try:
+    dados = pd.read_csv(
+        URL_PLANILHA,
+        sep="\t"
+    )
+
+except:
+    dados = pd.read_csv(arquivo)
 
 st.divider()
 
