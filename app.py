@@ -99,9 +99,92 @@ c3.metric(
 
 st.divider()
 
+# Dashboard de conversão
+st.divider()
+
+st.subheader("📈 Dashboard de Conversão")
+
+c1, c2, c3 = st.columns(3)
+
+visitas = 0
+captacoes = 0
+
+if "Status" in dados.columns:
+
+    visitas = len(
+        dados[
+            dados["Status"]=="Visita"
+        ]
+    )
+
+    captacoes = len(
+        dados[
+            dados["Status"]=="Venda"
+        ]
+    )
+
+total = len(dados)
+
+taxa = 0
+
+if total > 0:
+    taxa = round(
+        (captacoes/total)*100,
+        1
+    )
+
+c1.metric(
+    "📅 Visitas",
+    visitas
+)
+
+c2.metric(
+    "🏠 Captações",
+    captacoes
+)
+
+c3.metric(
+    "📊 Taxa Fechamento",
+    f"{taxa}%"
+)
+
+st.divider()
+
+# Botão WhatsApp
 st.subheader("📋 Leads")
+
+if "WhatsApp" in dados.columns:
+
+    dados["WhatsApp Link"] = dados.apply(
+        lambda x:
+        f"https://wa.me/55{str(x['WhatsApp']).replace('.0','')}"
+        if pd.notnull(x["WhatsApp"])
+        else "",
+        axis=1
+    )
 
 st.dataframe(
     dados,
     use_container_width=True
 )
+
+st.subheader("📲 Abrir conversa")
+
+lead = st.selectbox(
+    "Selecione o lead",
+    dados["Nome"]
+)
+
+selecionado = dados[
+    dados["Nome"]==lead
+].iloc[0]
+
+if st.button("Abrir WhatsApp"):
+
+    st.markdown(
+        f"""
+        <meta http-equiv="refresh"
+        content="0; url={selecionado['WhatsApp Link']}">
+        """,
+        unsafe_allow_html=True
+    )
