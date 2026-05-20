@@ -1,107 +1,14 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
-import os
 
-st.set_page_config(page_title="Captador ZN", layout="wide")
+st.set_page_config(
+    page_title="Captador ZN",
+    layout="wide"
+)
 
-st.title("🏠 Captador ZN — CRM Imobiliário")
-st.subheader("Captação de proprietários - Zona Norte SP")
+st.title("🏠 Captador ZN")
+st.subheader("CRM Imobiliário - Zona Norte SP")
 
-arquivo = "leads.csv"
-
-# Cria arquivo inicial
-if not os.path.exists(arquivo):
-    pd.DataFrame(columns=[
-        "Data",
-        "Nome",
-        "WhatsApp",
-        "Bairro",
-        "Valor",
-        "Metragem",
-        "Score",
-        "Status"
-    ]).to_csv(arquivo, index=False)
-
-# Formulário
-col1, col2 = st.columns(2)
-
-with col1:
-    nome = st.text_input("Nome")
-    whatsapp = st.text_input("WhatsApp")
-
-    bairro = st.selectbox(
-        "Bairro",
-        [
-            "Santana",
-            "Tucuruvi",
-            "Casa Verde",
-            "Mandaqui",
-            "Jardim São Paulo",
-            "Tremembé"
-        ]
-    )
-
-with col2:
-    valor = st.text_input("Valor do imóvel")
-    metragem = st.text_input("Metragem")
-
-texto = st.text_area("Cole o texto do anúncio")
-
-# Salvar lead
-if st.button("Analisar e salvar lead"):
-
-    score = 0
-    t = texto.lower()
-
-    regras = {
-        "direto com proprietário":40,
-        "particular":30,
-        "sem corretor":25,
-        "trato direto":15,
-        "imobiliária":-40
-    }
-
-    for k, v in regras.items():
-        if k in t:
-            score += v
-
-    score = max(0, min(score,100))
-
-    novo = pd.DataFrame([{
-        "Data": datetime.now().strftime("%d/%m/%Y"),
-        "Nome": nome,
-        "WhatsApp": whatsapp,
-        "Bairro": bairro,
-        "Valor": valor,
-        "Metragem": metragem,
-        "Score": score,
-        "Status": "Novo"
-    }])
-
-    banco = pd.read_csv(arquivo)
-
-    banco = pd.concat(
-        [banco, novo],
-        ignore_index=True
-    )
-
-    banco.to_csv(
-        arquivo,
-        index=False
-    )
-
-    st.success("Lead salvo")
-    st.metric("Score", score)
-if "urgente" in t or "preciso vender" in t:
-    st.error("🔥 Lead quente")
-
-elif "avaliando" in t or "estudando" in t:
-    st.warning("🟡 Lead morno")
-
-else:
-    st.info("❄️ Lead frio")
-# Carrega dados
 URL_PLANILHA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSjdBGWIbfd-xrk-8YO_zafNu8zZOPdXmMHXc7wcUn0TeYD-uf8_qFNRtk3uhh_wow6yQ8onO2pOzs/pub?output=tsv"
 
 try:
@@ -110,85 +17,91 @@ try:
         sep="\t"
     )
 
-except:
-    dados = pd.read_csv(arquivo)
+except Exception as e:
+    st.error(f"Erro ao carregar planilha: {e}")
+    st.stop()
+
+# Ajusta nomes automaticamente
+mapa = {}
+
+for coluna in dados.columns:
+
+    nome = coluna.lower()
+
+    if "nome" in nome:
+        mapa[coluna] = "Nome"
+
+    elif "whatsapp" in nome:
+        mapa[coluna] = "WhatsApp"
+
+    elif "bairro" in nome:
+        mapa[coluna] = "Bairro"
+
+    elif "valor" in nome:
+        mapa[coluna] = "Valor"
+
+    elif "metragem" in nome:
+        mapa[coluna] = "Metragem"
+
+    elif "descr" in nome:
+        mapa[coluna] = "Descrição"
+
+    elif "score" in nome:
+        mapa[coluna] = "Score"
+
+    elif "urg" in nome:
+        mapa[coluna] = "Urgencia"
+
+dados = dados.rename(columns=mapa)
 
 st.divider()
 
-# Atualização de status
-st.subheader("🔄 Atualizar status")
+c1, c2, c3 = st.columns(3)
 
-if len(dados) > 0:
+c1.metric(
+    "Total Leads",
+    len(dados)
+)
 
-    lead = st.selectbox(
-        "Selecione o lead",
-        dados["Nome"]
-    )
+quentes = 0
 
-    novo_status = st.selectbox(
-        "Mover para",
-        [
-            "Novo",
-            "Contatado",
-            "Visita",
-            "Captação",
-            "Venda"
+if "Urgencia" in dados.columns:
+    quentes = len(
+        dados[
+            dados["Urgencia"]=="🔥 Quente"
         ]
     )
 
-    if st.button("Atualizar Status"):
+c2.metric(
+    "Leads Quentes",
+    quentes
+)
 
-        dados.loc[
-            dados["Nome"] == lead,
-            "Status"
-        ] = novo_status
+alta = 0
 
-        dados.to_csv(
-            arquivo,
-            index=False
-        )
+if "Score" in dados.columns:
 
-        st.success("Status atualizado")
-        st.rerun()
+    dados["Score"] = pd.to_numeric(
+        dados["Score"],
+        errors="coerce"
+    )
+
+    alta = len(
+        dados[
+            dados["Score"]>=80
+        ]
+    )
+
+c3.metric(
+    "Alta Prioridade",
+    alta
+)
 
 st.divider()
 
-# CRM Visual
-st.subheader("🏢 CRM Imobiliário")
+st.subheader("📋 Leads")
 
-c1,c2,c3,c4,c5 = st.columns(5)
-
-with c1:
-    st.markdown("### 📌 Novos")
-    st.dataframe(
-        dados[dados["Status"]=="Novo"][["Nome","Bairro","Valor"]],
-        hide_index=True
-    )
-
-with c2:
-    st.markdown("### 📞 Contatados")
-    st.dataframe(
-        dados[dados["Status"]=="Contatado"][["Nome","Bairro","Valor"]],
-        hide_index=True
-    )
-
-with c3:
-    st.markdown("### 🏠 Visitas")
-    st.dataframe(
-        dados[dados["Status"]=="Visita"][["Nome","Bairro","Valor"]],
-        hide_index=True
-    )
-
-with c4:
-    st.markdown("### ✍️ Captação")
-    st.dataframe(
-        dados[dados["Status"]=="Captação"][["Nome","Bairro","Valor"]],
-        hide_index=True
-    )
-
-with c5:
-    st.markdown("### 💰 Venda")
-    st.dataframe(
-        dados[dados["Status"]=="Venda"][["Nome","Bairro","Valor"]],
-        hide_index=True
-    )
+st.dataframe(
+    dados,
+    use_container_width=True
+)
