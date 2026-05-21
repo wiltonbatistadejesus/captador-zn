@@ -53,7 +53,34 @@ for coluna in dados.columns:
         mapa[coluna] = "Urgencia"
 
 dados = dados.rename(columns=mapa)
+st.sidebar.title("⚙️ Configuração Captador")
 
+st.sidebar.subheader("Palavras que aumentam score")
+
+positivas = st.sidebar.text_area(
+    "Separar por vírgula",
+    "direto proprietário,particular,sem corretor,urgente,preciso vender,mudança,venda rápida,negociável"
+)
+
+st.sidebar.subheader("Palavras que reduzem score")
+
+negativas = st.sidebar.text_area(
+    "Separar por vírgula",
+    "imobiliária,corretor,creci,consultor imobiliário"
+)
+
+st.sidebar.subheader("Bairros prioritários")
+
+bairros = st.sidebar.text_area(
+    "Separar por vírgula",
+    "Santana,Tucuruvi,Casa Verde,Mandaqui"
+)
+
+positivas = [x.strip().lower() for x in positivas.split(",")]
+
+negativas = [x.strip().lower() for x in negativas.split(",")]
+
+bairros = [x.strip().lower() for x in bairros.split(",")]
 st.divider()
 
 c1, c2, c3 = st.columns(3)
@@ -96,6 +123,38 @@ c3.metric(
     "Alta Prioridade",
     alta
 )
+
+def calcular_score(texto,bairro):
+
+    score = 0
+
+    texto = str(texto).lower()
+    bairro = str(bairro).lower()
+
+    for p in positivas:
+        if p in texto:
+            score += 20
+
+    for n in negativas:
+        if n in texto:
+            score -= 20
+
+    if bairro in bairros:
+        score += 15
+
+    return max(score,0)
+
+
+if "Descrição" in dados.columns and "Bairro" in dados.columns:
+
+    dados["Score IA"] = dados.apply(
+        lambda x:
+        calcular_score(
+            x["Descrição"],
+            x["Bairro"]
+        ),
+        axis=1
+    )
 
 st.divider()
 
