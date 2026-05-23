@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
 
-# ======================================
+# ==================================
 # CONFIGURAÇÃO
-# ======================================
+# ==================================
 
 st.set_page_config(
     page_title="Captador ZN",
@@ -15,9 +15,9 @@ st.subheader("CRM Imobiliário Zona Norte")
 
 URL_PLANILHA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSjdBGWIbfd-xrk-8YO_zafNu8zZOPdXmMHXc7wcUn0TeYD-uf8_qFNRtk3uhh_wow6yQ8onO2pOzs/pub?output=tsv"
 
-# ======================================
-# CARREGAR PLANILHA
-# ======================================
+# ==================================
+# CARREGA PLANILHA
+# ==================================
 
 try:
 
@@ -34,9 +34,9 @@ except Exception as e:
 
     st.stop()
 
-# ======================================
-# AJUSTAR NOMES DE COLUNAS
-# ======================================
+# ==================================
+# AJUSTA COLUNAS
+# ==================================
 
 mapa = {}
 
@@ -75,11 +75,11 @@ dados = dados.rename(
     columns=mapa
 )
 
-# ======================================
-# GARANTIR COLUNAS
-# ======================================
+# ==================================
+# GARANTE COLUNAS
+# ==================================
 
-colunas_necessarias = [
+colunas = [
     "Nome",
     "WhatsApp",
     "Bairro",
@@ -91,15 +91,15 @@ colunas_necessarias = [
     "Status"
 ]
 
-for coluna in colunas_necessarias:
+for coluna in colunas:
 
     if coluna not in dados.columns:
 
         dados[coluna] = ""
 
-# ======================================
+# ==================================
 # REMOVE COLUNAS ANTIGAS
-# ======================================
+# ==================================
 
 for coluna in [
     "Score",
@@ -114,9 +114,9 @@ for coluna in [
             columns=[coluna]
         )
 
-# ======================================
+# ==================================
 # REMOVE DUPLICADOS
-# ======================================
+# ==================================
 
 dados = dados.drop_duplicates(
     subset=[
@@ -127,9 +127,9 @@ dados = dados.drop_duplicates(
     keep="first"
 )
 
-# ======================================
+# ==================================
 # REGRAS IA
-# ======================================
+# ==================================
 
 positivas = [
     "direto proprietário",
@@ -155,9 +155,9 @@ bairros = [
     "casa verde"
 ]
 
-# ======================================
-# SCORE IA
-# ======================================
+# ==================================
+# SCORE
+# ==================================
 
 def calcular_score(row):
 
@@ -214,7 +214,7 @@ def calcular_score(row):
     if bairro in bairros:
         score += 30
 
-    # faixa principal
+    # preço ideal
 
     if 450000 <= valor <= 750000:
         score += 40
@@ -245,33 +245,44 @@ dados["Score"] = dados.apply(
     axis=1
 )
 
-# ======================================
+# ==================================
 # URGÊNCIA
-# ======================================
+# ==================================
 
-def urgencia(score):
+def urgencia(score,quartos):
 
-    if score >= 100:
+    quartos = pd.to_numeric(
+        quartos,
+        errors="coerce"
+    )
+
+    if pd.isna(quartos):
+        quartos = 0
+
+    if score >= 100 and quartos >=2:
         return "🔥 Quente"
 
-    elif score >= 60:
+    elif score >=60:
         return "🟡 Morno"
 
     return "❄️ Frio"
 
-dados["Urgência"] = dados[
-    "Score"
-].apply(
-    urgencia
+dados["Urgência"] = dados.apply(
+    lambda x:
+    urgencia(
+        x["Score"],
+        x["Quartos"]
+    ),
+    axis=1
 )
 
-# ======================================
+# ==================================
 # DASHBOARD
-# ======================================
+# ==================================
 
 st.divider()
 
-c1,c2,c3=st.columns(3)
+c1,c2,c3 = st.columns(3)
 
 c1.metric(
     "Total Leads",
@@ -279,7 +290,7 @@ c1.metric(
 )
 
 c2.metric(
-    "Leads Quentes",
+    "🔥 Quentes",
     len(
         dados[
             dados["Urgência"]=="🔥 Quente"
@@ -288,7 +299,7 @@ c2.metric(
 )
 
 c3.metric(
-    "Alta Prioridade",
+    "⭐ Alta Prioridade",
     len(
         dados[
             dados["Score"]>=80
@@ -296,9 +307,9 @@ c3.metric(
     )
 )
 
-# ======================================
-# FILTROS
-# ======================================
+# ==================================
+# FILTRO
+# ==================================
 
 st.divider()
 
@@ -318,24 +329,20 @@ if bairro != "Todos":
         dados["Bairro"] == bairro
     ]
 
-# ======================================
+# ==================================
 # TABELA
-# ======================================
+# ==================================
 
-st.divider()
-
-st.subheader(
-    "📋 Leads"
-)
+st.subheader("📋 Leads")
 
 st.dataframe(
     dados,
     use_container_width=True
 )
 
-# ======================================
+# ==================================
 # WHATSAPP
-# ======================================
+# ==================================
 
 dados["WhatsApp Link"] = dados[
     "WhatsApp"
