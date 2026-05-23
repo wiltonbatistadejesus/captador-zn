@@ -94,8 +94,9 @@ colunas = [
 for coluna in colunas:
 
     if coluna not in dados.columns:
-
         dados[coluna] = ""
+
+dados = dados.fillna("")
 
 # ==================================
 # REMOVE COLUNAS ANTIGAS
