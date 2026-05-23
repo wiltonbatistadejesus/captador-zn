@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
 
-# =========================
+# =====================================
 # CONFIGURAÇÃO
-# =========================
+# =====================================
 
 st.set_page_config(
     page_title="Captador ZN",
@@ -11,13 +11,13 @@ st.set_page_config(
 )
 
 st.title("🏠 Captador ZN")
-st.subheader("CRM Imobiliário Zona Norte")
+st.subheader("CRM Imobiliário Zona Norte SP")
 
 URL_PLANILHA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSjdBGWIbfd-xrk-8YO_zafNu8zZOPdXmMHXc7wcUn0TeYD-uf8_qFNRtk3uhh_wow6yQ8onO2pOzs/pub?output=tsv"
 
-# =========================
-# CARREGAR DADOS
-# =========================
+# =====================================
+# CARREGA PLANILHA
+# =====================================
 
 try:
 
@@ -34,9 +34,9 @@ except Exception as e:
 
     st.stop()
 
-# =========================
-# AJUSTA NOMES DAS COLUNAS
-# =========================
+# =====================================
+# AJUSTA NOMES
+# =====================================
 
 mapa = {}
 
@@ -45,54 +45,71 @@ for coluna in dados.columns:
     nome = coluna.lower()
 
     if "nome" in nome:
-        mapa[coluna]="Nome"
+        mapa[coluna] = "Nome"
 
     elif "whatsapp" in nome:
-        mapa[coluna]="WhatsApp"
+        mapa[coluna] = "WhatsApp"
 
     elif "bairro" in nome:
-        mapa[coluna]="Bairro"
+        mapa[coluna] = "Bairro"
 
     elif "valor" in nome:
-        mapa[coluna]="Valor"
+        mapa[coluna] = "Valor"
 
     elif "metragem" in nome:
-        mapa[coluna]="Metragem"
+        mapa[coluna] = "Metragem"
 
     elif "descr" in nome:
-        mapa[coluna]="Descrição"
-
-    elif "score" in nome:
-        mapa[coluna]="Score"
+        mapa[coluna] = "Descrição"
 
     elif "status" in nome:
-        mapa[coluna]="Status"
+        mapa[coluna] = "Status"
 
     elif "quart" in nome:
-        mapa[coluna]="Quartos"
+        mapa[coluna] = "Quartos"
+
+    elif "fonte" in nome:
+        mapa[coluna] = "Fonte"
 
 dados = dados.rename(
     columns=mapa
 )
 
-# =========================
+# =====================================
+# REMOVE COLUNAS ANTIGAS
+# =====================================
+
+for coluna in [
+    "Score",
+    "Score IA",
+    "Urgência",
+    "Urgencia"
+]:
+
+    if coluna in dados.columns:
+
+        dados = dados.drop(
+            columns=[coluna]
+        )
+
+# =====================================
 # REMOVE DUPLICADOS
-# =========================
+# =====================================
 
 if "WhatsApp" in dados.columns:
 
     dados = dados.drop_duplicates(
         subset=[
             "WhatsApp",
-            "Bairro",
-            "Valor"
+            "Valor",
+            "Bairro"
         ],
         keep="first"
     )
 
-# =========================
-# PALAVRAS IA
-# =========================
+# =====================================
+# REGRAS IA
+# =====================================
 
 positivas = [
     "direto proprietário",
@@ -118,50 +135,56 @@ bairros = [
     "casa verde"
 ]
 
-# =========================
+# =====================================
 # SCORE IA
-# =========================
+# =====================================
 
 def calcular_score(row):
 
-    score=0
+    score = 0
 
-    texto=str(
+    texto = str(
         row.get(
             "Descrição",
             ""
         )
     ).lower()
 
-    bairro=str(
+    bairro = str(
         row.get(
             "Bairro",
             ""
         )
     ).lower()
 
-    valor=pd.to_numeric(
-        row.get(
-            "Valor",
-            0
-        ),
-        errors="coerce"
+    valor = float(
+        pd.to_numeric(
+            row.get(
+                "Valor",
+                0
+            ),
+            errors="coerce"
+        )
     )
 
-    metragem=pd.to_numeric(
-        row.get(
-            "Metragem",
-            0
-        ),
-        errors="coerce"
+    metragem = float(
+        pd.to_numeric(
+            row.get(
+                "Metragem",
+                0
+            ),
+            errors="coerce"
+        )
     )
 
-    quartos=pd.to_numeric(
-        row.get(
-            "Quartos",
-            0
-        ),
-        errors="coerce"
+    quartos = float(
+        pd.to_numeric(
+            row.get(
+                "Quartos",
+                0
+            ),
+            errors="coerce"
+        )
     )
 
     # palavras positivas
@@ -169,31 +192,35 @@ def calcular_score(row):
     for p in positivas:
 
         if p in texto:
-            score +=20
+            score +=15
 
     # palavras negativas
 
     for n in negativas:
 
         if n in texto:
-            score -=20
+            score -=30
 
-    # bairros prioritários
+    # bairros
 
     if bairro in bairros:
         score +=30
 
-    # faixa de preço ideal
+    # faixa ideal
 
     if 450000 <= valor <= 750000:
         score +=40
+    else:
+        score -=20
 
     # metragem ideal
 
-    if 50 <= metragem <=80:
+    if 50 <= metragem <= 80:
         score +=25
+    else:
+        score -=10
 
-    # quartos ideais
+    # quartos
 
     if quartos == 2:
         score +=35
@@ -203,34 +230,34 @@ def calcular_score(row):
         0
     )
 
-dados["Score IA"]=dados.apply(
+dados["Score"] = dados.apply(
     calcular_score,
     axis=1
 )
 
-# =========================
+# =====================================
 # DEFINE URGÊNCIA
-# =========================
+# =====================================
 
 def urgencia(score):
 
-    if score>=100:
+    if score >=100:
         return "🔥 Quente"
 
-    elif score>=60:
+    elif score >=60:
         return "🟡 Morno"
 
     return "❄️ Frio"
 
-dados["Urgencia"]=dados[
-    "Score IA"
+dados["Urgência"] = dados[
+    "Score"
 ].apply(
     urgencia
 )
 
-# =========================
+# =====================================
 # DASHBOARD
-# =========================
+# =====================================
 
 st.divider()
 
@@ -243,7 +270,7 @@ c1.metric(
 
 quentes=len(
     dados[
-        dados["Urgencia"]=="🔥 Quente"
+        dados["Urgência"]=="🔥 Quente"
     ]
 )
 
@@ -254,7 +281,7 @@ c2.metric(
 
 alta=len(
     dados[
-        dados["Score IA"]>=80
+        dados["Score"]>=80
     ]
 )
 
@@ -263,17 +290,19 @@ c3.metric(
     alta
 )
 
+# =====================================
+# FILTROS
+# =====================================
+
 st.divider()
 
-# =========================
-# FILTROS
-# =========================
-
 bairro_filtro=st.selectbox(
-    "Filtrar bairro",
+    "Filtrar Bairro",
     ["Todos"]+
     list(
-        dados["Bairro"].dropna().unique()
+        dados["Bairro"]
+        .dropna()
+        .unique()
     )
 )
 
@@ -284,9 +313,11 @@ if bairro_filtro!="Todos":
         bairro_filtro
     ]
 
-# =========================
+# =====================================
 # TABELA
-# =========================
+# =====================================
+
+st.divider()
 
 st.subheader(
     "📋 Leads"
@@ -297,9 +328,9 @@ st.dataframe(
     use_container_width=True
 )
 
-# =========================
+# =====================================
 # WHATSAPP
-# =========================
+# =====================================
 
 if "WhatsApp" in dados.columns:
 
@@ -320,7 +351,7 @@ if "WhatsApp" in dados.columns:
     ].iloc[0]
 
     if st.button(
-        "Abrir WhatsApp"
+        "📲 Abrir WhatsApp"
     ):
 
         st.markdown(
