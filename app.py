@@ -207,31 +207,36 @@ def calcular_score(row):
     for n in negativas:
 
         if n in texto:
-            score -= 30
+            score -= 20
 
-    # bairros prioritários
+    # bairro prioritário
 
     if bairro in bairros:
         score += 30
 
-    # faixa de preço ideal
+    # faixa principal
 
     if 450000 <= valor <= 750000:
         score += 40
-    else:
-        score -= 20
 
-    # metragem ideal
+    elif 750000 < valor <= 1000000:
+        score += 20
+
+    # metragem
 
     if 50 <= metragem <= 80:
         score += 25
-    else:
-        score -= 10
+
+    elif 80 < metragem <= 120:
+        score += 15
 
     # quartos
 
     if quartos == 2:
         score += 35
+
+    elif quartos == 3:
+        score += 20
 
     return max(score,0)
 
