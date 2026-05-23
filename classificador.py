@@ -1,23 +1,52 @@
-def classificar(anuncio):
+import requests
+import time
 
-    score = 0
+WEBHOOK = "https://hook.us2.make.com/7nv6skeuu5cwybd8yaylpy915y7mbc34"
 
-    texto = anuncio.lower()
+leads = [
 
-    regras = {
-        "direto com proprietário":40,
-        "particular":30,
-        "sem corretor":25,
-        "trato direto":15,
-        "não aceito imobiliária":20,
-        "imobiliária":-40
+    {
+        "nome":"Carlos",
+        "telefone":"11987654321",
+        "bairro":"Santana",
+        "quartos":2,
+        "valor":620000,
+        "metragem":67,
+        "descricao":"Particular. Preciso vender urgente",
+        "fonte":"Robô"
+    },
+
+    {
+        "nome":"Marcos",
+        "telefone":"11998765432",
+        "bairro":"Tucuruvi",
+        "quartos":2,
+        "valor":700000,
+        "metragem":72,
+        "descricao":"Direto proprietário. Mudança",
+        "fonte":"Robô"
     }
 
-    for palavra, valor in regras.items():
+]
 
-        if palavra in texto:
-            score += valor
+for lead in leads:
 
-    score = max(0,min(score,100))
+    try:
 
-    return score
+        resposta = requests.post(
+            WEBHOOK,
+            json=lead,
+            timeout=15
+        )
+
+        print(
+            f"Enviado: {lead['nome']} | Status: {resposta.status_code}"
+        )
+
+    except Exception as erro:
+
+        print(
+            f"Erro: {erro}"
+        )
+
+    time.sleep(2)
