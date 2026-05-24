@@ -1,63 +1,54 @@
-import pandas as pd
-from classificador import classificar
+import requests
+import time
 
-BAIRROS = [
-    "Santana",
-    "Tucuruvi",
-    "Casa Verde",
-    "Mandaqui",
-    "Jardim São Paulo",
-    "Tremembé"
+WEBHOOK = "https://hook.us2.make.com/7nv6skeuu5cwybd8yaylpy915y7mbc34"
+
+leads = [
+
+    {
+        "nome":"Carlos",
+        "telefone":"11987654321",
+        "bairro":"Santana",
+        "quartos":2,
+        "valor":620000,
+        "metragem":67,
+        "descricao":"Particular. Preciso vender urgente",
+        "status":"Novo",
+        "fonte":"Robô"
+    },
+
+    {
+        "nome":"Marcos",
+        "telefone":"11998765432",
+        "bairro":"Tucuruvi",
+        "quartos":2,
+        "valor":700000,
+        "metragem":72,
+        "descricao":"Direto proprietário. Mudança",
+        "status":"Novo",
+        "fonte":"Robô"
+    }
+
 ]
 
-import pandas as pd
+for lead in leads:
 
-# Exemplo lendo dados de uma fonte CSV
-dados = pd.read_csv(
-    "novos_leads.csv"
-)
+    try:
 
-leads = []
-
-for _, anuncio in dados.iterrows():
-
-    score = classificar(
-        anuncio["descricao"]
-    )
-
-    if score >= 50:
-
-        leads.append({
-
-            "Nome": anuncio["nome"],
-            "WhatsApp": anuncio["whatsapp"],
-            "Bairro": anuncio["bairro"],
-            "Valor": anuncio["valor"],
-            "Score": score,
-            "Status": "Novo"
-
-        })
-
-leads=[]
-
-for anuncio in dados:
-
-    if anuncio["bairro"] in BAIRROS:
-
-        score = classificar(
-            anuncio["descricao"]
+        resposta = requests.post(
+            WEBHOOK,
+            json=lead,
+            timeout=15
         )
 
-        if score >= 50:
+        print(
+            f"Enviado: {lead['nome']} | Status: {resposta.status_code}"
+        )
 
-            anuncio["score"]=score
+    except Exception as erro:
 
-            leads.append(
-                anuncio
-            )
+        print(
+            f"Erro: {erro}"
+        )
 
-df = pd.DataFrame(
-    leads
-)
-
-print(df)
+    time.sleep(2)
